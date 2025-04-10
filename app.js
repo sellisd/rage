@@ -8,6 +8,10 @@ class RageApp {
         this.lastTime = new Date();
         this.shakeThreshold = 15;
         this.shakeCooldown = 1000; // 1 second cooldown between shakes
+        this.hasVibration = 'vibrate' in navigator;
+        
+        // Log vibration support status
+        console.log('Vibration support:', this.hasVibration ? 'available' : 'not available');
         
         // Load voices
         this.loadVoices();
@@ -127,6 +131,13 @@ class RageApp {
         
         if ((deltaX + deltaY + deltaZ) > this.shakeThreshold) {
             this.lastTime = new Date();
+            
+            // Use cached vibration support check
+            if (this.hasVibration) {
+                // Short vibration burst for feedback
+                navigator.vibrate([100]); // Using array pattern for better device compatibility
+            }
+            
             this.updatePhrase();
         }
         

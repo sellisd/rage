@@ -99,6 +99,47 @@ h1 {
     opacity: 0.8;
 }
 
+.github-links {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.github-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.github-link:hover {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    transform: translateY(-1px);
+}
+
+.github-icon {
+    opacity: 0.8;
+}
+
+/* Dark mode adjustments for github links */
+@media (prefers-color-scheme: dark) {
+    .github-link {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .github-link:hover {
+        background-color: var(--accent-color);
+    }
+}
+
 @keyframes shake {
     0%, 100% { transform: rotate(0); }
     25% { transform: rotate(-10deg); }

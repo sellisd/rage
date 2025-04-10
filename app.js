@@ -3,18 +3,76 @@ class RageApp {
         this.phraseElement = document.getElementById('phrase');
         this.languageButtons = document.querySelectorAll('.language-selector button');
         this.speechSynthesis = window.speechSynthesis;
+        this.voices = [];
         this.isShaking = false;
         this.lastTime = new Date();
         this.shakeThreshold = 15;
         this.shakeCooldown = 1000; // 1 second cooldown between shakes
         
+        // Load voices
+        this.loadVoices();
         this.init();
+    }
+
+    loadVoices() {
+        // Load initial voices
+        this.voices = this.speechSynthesis.getVoices();
+        
+        // Chrome loads voices asynchronously
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                this.voices = this.speechSynthesis.getVoices();
+            };
+        }
+    }
+
+    isMaleVoice(voice) {
+        const name = voice.name.toLowerCase();
+        return name.includes('male') ||
+               name.includes('man') ||
+               name.includes('guy') ||
+               name.includes('homme') ||  // French
+               name.includes('masculin') ||
+               name.includes('άνδρας') || // Greek
+               name.includes('αρσενικός');
+    }
+
+    getVoiceForLanguage(lang) {
+        // Get all voices for this language
+        const langVoices = this.voices.filter(v => v.lang.startsWith(lang));
+        
+        if (langVoices.length === 0) {
+            // Try with base language code
+            const baseCode = lang.split('-')[0];
+            const baseVoices = this.voices.filter(v => v.lang.startsWith(baseCode));
+            
+            // Try to find a male voice first
+            let maleVoice = baseVoices.find(v => this.isMaleVoice(v));
+            return maleVoice || baseVoices[0];
+        }
+        
+        // Try to find a male voice first
+        let maleVoice = langVoices.find(v => this.isMaleVoice(v));
+        return maleVoice || langVoices[0];
     }
     
     init() {
         this.setupEventListeners();
         this.setupShakeDetection();
         this.updatePhrase(); // Show initial phrase
+        
+        // Debug: Log available voices
+        setTimeout(() => {
+            console.log('=== Available Voices ===');
+            this.voices.forEach(voice => {
+                console.log(`Voice: ${voice.name}`);
+                console.log(`- Language: ${voice.lang}`);
+                console.log(`- URI: ${voice.voiceURI}`);
+                console.log(`- Default: ${voice.default}`);
+                console.log(`- Local Service: ${voice.localService}`);
+                console.log('---');
+            });
+        }, 1000); // Wait for voices to load
     }
     
     setupEventListeners() {
@@ -22,6 +80,8 @@ class RageApp {
         this.languageButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const lang = button.getAttribute('data-lang');
+                console.log(`=== Language Change ===`);
+                console.log(`Requested language: ${lang}`);
                 this.changeLanguage(lang);
             });
         });
@@ -118,21 +178,35 @@ class RageApp {
         
         const utterance = new SpeechSynthesisUtterance(phrase);
         
-        // Set language based on current selection
-        switch (PhraseManager.getCurrentLanguage()) {
-            case 'fr':
-                utterance.lang = 'fr-FR';
-                break;
-            case 'el':
-                utterance.lang = 'el-GR';
-                break;
-            default:
-                utterance.lang = 'en-GB';
+        // Set language code based on current selection
+        let langCode;
+        const currentLang = PhraseManager.getCurrentLanguage();
+        switch (currentLang) {
+            case 'fr': langCode = 'fr-FR'; break;
+            case 'el': langCode = 'el-GR'; break;
+            default:   langCode = 'en-GB';
         }
         
-        // Adjust speech properties
-        utterance.rate = 0.9;  // Slightly slower for clarity
-        utterance.pitch = 1.1; // Slightly higher pitch for character
+        // Get appropriate male voice
+        const voice = this.getVoiceForLanguage(langCode);
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang; // Use exact language code from voice
+            console.log(`Using voice: ${voice.name} (${voice.lang})`);
+        } else {
+            utterance.lang = langCode;
+            console.warn(`No voice found for language: ${langCode}`);
+        }
+        
+        // Captain Haddock style speech properties
+        utterance.rate = 1;     // Even faster for more energy
+        utterance.pitch = 0.3;    // Lower pitch for male voice
+        utterance.volume = 1.0;   // Maximum volume
+        
+        // Add dramatic emphasis
+        const emphasis = Math.random() * 0.3; // Larger variation for more drama
+        utterance.rate += emphasis;           // Faster for excitement
+        utterance.pitch -= emphasis * 0.2;    // Slightly lower for anger
         
         this.speechSynthesis.speak(utterance);
     }
